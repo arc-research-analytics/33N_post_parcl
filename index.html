@@ -90,12 +90,17 @@
 
     <div class="controls">
       <span class="metric-label">Select Metric:</span>
-      <sl-radio-group id="metricRadioGroup" value="median_DOM" size="medium">
+      <sl-radio-group
+        id="metricRadioGroup"
+        value="total_listings"
+        size="medium"
+      >
+        <sl-radio-button value="total_listings">Total Listings</sl-radio-button>
         <sl-radio-button value="median_DOM"
           >Median Days on Market</sl-radio-button
         >
-        <sl-radio-button value="median_PriceChange"
-          >Median Change in List Price (%)</sl-radio-button
+        <sl-radio-button value="investor_owned_listing_%"
+          >Percent of Investor-Owned Listings</sl-radio-button
         >
       </sl-radio-group>
     </div>
@@ -107,7 +112,8 @@
       var chartDom = document.getElementById("main");
       var myChart = echarts.init(chartDom);
       var geoData = null;
-      var currentMetric = "median_DOM";
+      var csvDataMap = new Map();
+      var currentMetric = "total_listings";
       var toggleInterval = null;
 
       // Show loading indicator
@@ -118,23 +124,35 @@
         maskColor: "rgba(255, 255, 255, 0.8)",
       });
 
-      // Load the GeoJSON file with both geometry and data
-      fetch("data/county_data_simp.geojson")
-        .then((response) => {
+      // Load GeoJSON and CSV in parallel
+      Promise.all([
+        fetch("data/county_data_simp.geojson").then((response) => {
           if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error(
+              `HTTP error fetching geojson! status: ${response.status}`
+            );
           }
           return response.json();
-        })
-        .then((data) => {
-          geoData = data;
+        }),
+        fetch("data/listings_county_summary.csv").then((response) => {
+          if (!response.ok) {
+            throw new Error(
+              `HTTP error fetching csv! status: ${response.status}`
+            );
+          }
+          return response.text();
+        }),
+      ])
+        .then(([geo, csvText]) => {
+          geoData = geo;
+          csvDataMap = parseCsvToMap(csvText);
           // Register the map once, not on every metric change
           echarts.registerMap("AtlantaCounties", geoData);
           setupChart(currentMetric);
           setupControls();
         })
         .catch((error) => {
-          console.error("Error loading GeoJSON:", error);
+          console.error("Error loading data:", error);
           myChart.hideLoading();
           document.getElementById("main").innerHTML =
             '<div class="loading" style="color: red;">Error loading data: ' +
@@ -142,9 +160,18 @@
             "</div>";
         });
 
-      // Simplified configuration for only 2 metrics
+      // Simplified configuration for only 3 metrics
       function getMetricConfig(metric) {
         const configs = {
+          total_listings: {
+            title: "Total Listings",
+            formatter: (value) =>
+              value !== null && value !== undefined
+                ? value.toLocaleString()
+                : "No data",
+            axisFormatter: (value) => value.toLocaleString(),
+            colors: ["#eff3ff", "#bdd7e7", "#6baed6", "#3182bd", "#08519c"],
+          },
           median_DOM: {
             title: "Median Days on Market",
             formatter: (value) =>
@@ -152,19 +179,45 @@
                 ? value.toLocaleString() + " days"
                 : "No data",
             axisFormatter: (value) => value.toLocaleString(),
-            colors: ["#eff3ff", "#bdd7e7", "#6baed6", "#3182bd", "#08519c"],
+            colors: ["#ffffcc", "#a1dab4", "#41b6c4", "#2c7fb8", "#253494"],
           },
-          median_PriceChange: {
-            title: "Median Change in List Price (%)",
+          "investor_owned_listing_%": {
+            title: "Percent of Investor-Owned Listings",
             formatter: (value) =>
               value !== null && value !== undefined
-                ? value.toFixed(1) + "%"
+                ? value.toFixed(0) + "%"
                 : "No data",
-            axisFormatter: (value) => value.toFixed(1) + "%",
-            colors: ["#bd0026", "#f03b20", "#fd8d3c", "#fecc5c", "#ffffb2"],
+            axisFormatter: (value) => value.toFixed(0) + "%",
+            colors: ["#ffffb2", "#fecc5c", "#fd8d3c", "#f03b20", "#bd0026"],
           },
         };
         return configs[metric];
+      }
+
+      // Minimal CSV parser -> Map county name -> row object
+      function parseCsvToMap(csvText) {
+        const lines = csvText.trim().split(/\r?\n/);
+        if (lines.length === 0) return new Map();
+        const headers = lines[0].split(",");
+        const map = new Map();
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i];
+          if (!line || !line.trim()) continue;
+          const cols = line.split(",");
+          const row = {};
+          headers.forEach((h, idx) => {
+            const key = h;
+            const raw = cols[idx] !== undefined ? cols[idx].trim() : "";
+            const asNumber = raw === "" ? null : Number(raw);
+            row[key] =
+              raw === "" ? null : Number.isNaN(asNumber) ? raw : asNumber;
+          });
+          const countyName = row["county"] || row["County"] || row["name"];
+          if (countyName) {
+            map.set(countyName, row);
+          }
+        }
+        return map;
       }
 
       // Color interpolation function to match visualMap behavior
@@ -203,16 +256,29 @@
       function setupChart(metric) {
         myChart.hideLoading();
 
-        // Extract data from GeoJSON properties
+        // Extract data by joining GeoJSON with CSV on county name
         var countyData = geoData.features
           .map(function (feature) {
+            const countyName = feature.properties.name;
+            const csvRow = csvDataMap.get(countyName);
+            let value = undefined;
+            if (csvRow && csvRow.hasOwnProperty(metric)) {
+              value = csvRow[metric];
+            } else {
+              value = feature.properties[metric];
+            }
+            if (value === "") value = null;
+            if (typeof value === "string" && value !== null) {
+              const parsed = Number(value);
+              value = Number.isNaN(parsed) ? null : parsed;
+            }
             return {
-              name: feature.properties.name,
-              value: feature.properties[metric],
+              name: countyName,
+              value: value,
             };
           })
           .filter(function (item) {
-            // Keep all data, including nulls and zeros for proper visualization
+            // Keep values that are defined (allow nulls to show as N/A)
             return item.value !== undefined;
           });
 
@@ -229,7 +295,15 @@
         // Find min and max values for visual map
         const validValues = countyData
           .map((item) => item.value)
-          .filter((v) => v !== null && v !== undefined);
+          .filter((v) => v !== null && v !== undefined && !Number.isNaN(v));
+        if (validValues.length === 0) {
+          myChart.hideLoading();
+          document.getElementById("main").innerHTML =
+            '<div class="loading" style="color: red;">No valid values found for metric: ' +
+            metric +
+            "</div>";
+          return;
+        }
         const minValue = Math.min(...validValues);
         const maxValue = Math.max(...validValues);
 
@@ -241,7 +315,8 @@
             return "#ccc";
           }
           // Use the same color interpolation as the map's visualMap
-          const ratio = (item.value - minValue) / (maxValue - minValue);
+          const range = maxValue - minValue;
+          const ratio = range === 0 ? 0 : (item.value - minValue) / range;
           const colors = config.colors;
 
           // Interpolate between colors like visualMap does
