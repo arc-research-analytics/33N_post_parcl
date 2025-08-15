@@ -99,8 +99,8 @@
         <sl-radio-button value="median_DOM"
           >Median Days on Market</sl-radio-button
         >
-        <sl-radio-button value="investor_owned_listing_%"
-          >Percent of Investor-Owned Listings</sl-radio-button
+        <sl-radio-button value="investor_owned_listing"
+          >Investor-Owned Listings</sl-radio-button
         >
       </sl-radio-group>
     </div>
@@ -181,13 +181,13 @@
             axisFormatter: (value) => value.toLocaleString(),
             colors: ["#ffffcc", "#a1dab4", "#41b6c4", "#2c7fb8", "#253494"],
           },
-          "investor_owned_listing_%": {
-            title: "Percent of Investor-Owned Listings",
+          investor_owned_listing: {
+            title: "Investor-Owned Listings",
             formatter: (value) =>
               value !== null && value !== undefined
-                ? value.toFixed(0) + "%"
+                ? value.toLocaleString(0)
                 : "No data",
-            axisFormatter: (value) => value.toFixed(0) + "%",
+            axisFormatter: (value) => value.toLocaleString(0),
             colors: ["#ffffb2", "#fecc5c", "#fd8d3c", "#f03b20", "#bd0026"],
           },
         };
@@ -349,7 +349,7 @@
 
         const mapOption = {
           title: {
-            text: `${config.title} - Metro Atlanta Counties`,
+            text: config.title,
             left: "center",
             top: 10,
             textStyle: {
