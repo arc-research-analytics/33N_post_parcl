@@ -203,6 +203,12 @@
           `Using configured range: ${visualMapMin} - ${visualMapMax} with ${config.colors.length} colors`
         );
 
+        // Global map view settings - used by both hex and county layers
+        const globalZoom = 1.2;
+        const globalCenter = [-84.4, 33.83]; // Atlanta area center
+        const globalScaleLimit = { min: 0.5, max: 10 };
+        const globalRoam = true; // Enable zoom and pan interactions
+
         const option = {
           geo: {
             map: "HexGrid",
@@ -260,10 +266,10 @@
               map: "HexGrid",
               nameProperty: "hex_id",
               data: data,
-              zoom: 1.2, // Control initial zoom level here
-              center: [-84.5, 33.8], // Control center point here
-              roam: false, // Enable zoom and pan interactions
-              scaleLimit: { min: 0.5, max: 10 },
+              zoom: globalZoom,
+              center: globalCenter,
+              roam: globalRoam,
+              scaleLimit: globalScaleLimit,
               itemStyle: {
                 borderColor: "#bdbdbd",
                 borderWidth: 0.75,
@@ -283,10 +289,10 @@
               type: "map",
               map: "Counties",
               data: [], // No data, just boundaries
-              zoom: 1.2, // Match hexagon zoom
-              center: [-84.5, 33.8], // Match hexagon center
-              roam: false,
-              scaleLimit: { min: 0.5, max: 10 },
+              zoom: globalZoom,
+              center: globalCenter,
+              roam: globalRoam, // Same roam setting, but silent will override interactions
+              scaleLimit: globalScaleLimit,
               itemStyle: {
                 areaColor: "transparent",
                 borderColor: "#000000",
