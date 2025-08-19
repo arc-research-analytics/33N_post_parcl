@@ -20,9 +20,20 @@
         width: 100%;
         height: 600px;
       }
+      /* background color */
+      body {
+        background-color: #2a2a2a;
+      }
+      /* center align the radio buttons */
+      #metricSelector {
+        display: flex;
+        justify-content: center;
+      }
     </style>
   </head>
   <body>
+    <div id="chart"></div>
+
     <!-- Shoelace UI radio buttons -->
     <sl-radio-group
       label=""
@@ -39,8 +50,6 @@
         >Investor Listings</sl-radio-button
       >
     </sl-radio-group>
-
-    <div id="chart"></div>
 
     <script>
       // Initialize chart with debugging
@@ -197,10 +206,6 @@
         const option = {
           geo: {
             map: "HexGrid",
-            roam: true,
-            zoom: 1,
-            center: [-84.5, 33.8], // Atlanta area center
-            scaleLimit: { min: 0.5, max: 10 },
             show: false, // Hide geo component - let series handle rendering
           },
           tooltip: {
@@ -255,6 +260,10 @@
               map: "HexGrid",
               nameProperty: "hex_id",
               data: data,
+              zoom: 1.2, // Control initial zoom level here
+              center: [-84.5, 33.8], // Control center point here
+              roam: false, // Enable zoom and pan interactions
+              scaleLimit: { min: 0.5, max: 10 },
               itemStyle: {
                 borderColor: "#bdbdbd",
                 borderWidth: 0.75,
@@ -274,6 +283,10 @@
               type: "map",
               map: "Counties",
               data: [], // No data, just boundaries
+              zoom: 1.2, // Match hexagon zoom
+              center: [-84.5, 33.8], // Match hexagon center
+              roam: false,
+              scaleLimit: { min: 0.5, max: 10 },
               itemStyle: {
                 areaColor: "transparent",
                 borderColor: "#000000",
