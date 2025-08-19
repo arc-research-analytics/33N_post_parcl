@@ -1,533 +1,348 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Parcl Viz</title>
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
-
-    <!-- Add Shoelace UI -->
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.11.2/cdn/themes/light.css"
-    />
+    <meta charset="utf-8" />
+    <title>ECharts Choropleth with Metric Toggle</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
     <script
       type="module"
-      src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.11.2/cdn/shoelace-autoloader.js"
+      src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2/cdn/shoelace.js"
     ></script>
-
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2/cdn/themes/light.css"
+    />
     <style>
-      body {
-        margin: 0;
-        padding: 10px;
-        font-family: Arial, sans-serif;
-        background-color: #2a2a2a;
-        color: #404040;
+      #controls {
+        margin: 1em;
       }
-      #main {
+      #chart {
         width: 100%;
-        height: 520px;
-      }
-      h1 {
-        text-align: center;
-        color: #404040;
-      }
-      .loading {
-        text-align: center;
-        font-size: 18px;
-        color: #404040;
-        margin-top: 250px;
-      }
-      .controls {
-        text-align: center;
-        margin-bottom: 20px;
-      }
-      /* Style the radio button group */
-      sl-radio-group {
-        --button-width: 180px;
-      }
-
-      sl-radio-button {
-        margin: 0;
-      }
-      /* Target the button content specifically */
-      sl-radio-button::part(button) {
-        color: #ffffff;
-      }
-
-      /* Target the label text */
-      sl-radio-button::part(label) {
-        color: #ffffff;
-      }
-
-      /* Ensure checked state also has white text */
-      sl-radio-button[checked]::part(button) {
-        color: #ffffff;
-      }
-
-      sl-radio-button[checked]::part(label) {
-        color: #ffffff;
-      }
-      .metric-label {
-        font-weight: 600;
-        color: #ffffff;
-      }
-      #metricRadioGroup {
-        margin-top: 20px;
-      }
-      .attribution {
-        text-align: center;
-        font-size: 12px;
-        color: #ffffff;
-        margin-top: 10px;
+        height: 600px;
       }
     </style>
   </head>
   <body>
-    <div id="main">
-      <div class="loading">Loading data...</div>
-    </div>
-
-    <div class="controls">
-      <span class="metric-label">Select Metric:</span>
-      <sl-radio-group
-        id="metricRadioGroup"
-        value="total_listings"
-        size="medium"
+    <!-- Shoelace UI radio buttons -->
+    <sl-radio-group
+      label=""
+      value="total_listings"
+      id="metricSelector"
+      size="small"
+    >
+      <sl-radio-button value="total_listings">All Listings</sl-radio-button>
+      <sl-radio-button value="median_DOM">Days on Market</sl-radio-button>
+      <sl-radio-button value="median_vintage"
+        >Construction Vintage</sl-radio-button
       >
-        <sl-radio-button value="total_listings">Total Listings</sl-radio-button>
-        <sl-radio-button value="median_DOM"
-          >Median Days on Market</sl-radio-button
-        >
-        <sl-radio-button value="investor_owned_listing"
-          >Investor-Owned Listings</sl-radio-button
-        >
-      </sl-radio-group>
-    </div>
+      <sl-radio-button value="investor_listings"
+        >Investor Listings</sl-radio-button
+      >
+    </sl-radio-group>
 
-    <div class="attribution">
-      <p>Source: Parcl Labs API. Data as of August 4, 2025.</p>
-    </div>
+    <div id="chart"></div>
+
     <script>
-      var chartDom = document.getElementById("main");
-      var myChart = echarts.init(chartDom);
-      var geoData = null;
-      var csvDataMap = new Map();
-      var currentMetric = "total_listings";
-      var toggleInterval = null;
+      // Initialize chart with debugging
+      console.log("Starting ECharts initialization...");
+      const chartContainer = document.getElementById("chart");
+      console.log("Chart container:", chartContainer);
+      console.log(
+        "Container dimensions:",
+        chartContainer.offsetWidth,
+        "x",
+        chartContainer.offsetHeight
+      );
 
-      // Show loading indicator
-      myChart.showLoading({
-        text: "Loading county data...",
-        color: "#4575b4",
-        textColor: "#000",
-        maskColor: "rgba(255, 255, 255, 0.8)",
-      });
+      const chart = echarts.init(chartContainer);
+      console.log("ECharts instance created:", chart);
 
-      // Load GeoJSON and CSV in parallel
+      let hexGeoJSON, countyGeoJSON;
+
+      // Configuration object for manual choropleth bins and colors
+      const metricConfig = {
+        total_listings: {
+          bins: [0, 10, 25, 50, 75, 100, 150],
+          colors: [
+            "#f7f7f7",
+            "#cccccc",
+            "#969696",
+            "#636363",
+            "#252525",
+            "#000000",
+          ],
+          labels: ["High", "Low"],
+        },
+        median_DOM: {
+          bins: [0, 30, 60, 120, 240, 500, 1000],
+          colors: [
+            "#ffffcc",
+            "#ffeda0",
+            "#fed976",
+            "#feb24c",
+            "#fd8d3c",
+            "#e31a1c",
+          ],
+          labels: ["Long", "Short"],
+        },
+        median_vintage: {
+          bins: [1950, 1970, 1980, 1990, 2000, 2010, 2025],
+          colors: [
+            "#8B4513",
+            "#CD853F",
+            "#F4A460",
+            "#FFE4B5",
+            "#FFF8DC",
+            "#FFFFFF",
+          ],
+          labels: ["Newer", "Older"],
+        },
+        investor_listings: {
+          bins: [0, 1, 3, 5, 10, 15, 25],
+          colors: [
+            "#fee5d9",
+            "#fcae91",
+            "#fb6a4a",
+            "#de2d26",
+            "#a50f15",
+            "#67000d",
+          ],
+          labels: ["High", "Low"],
+        },
+      };
+
+      // Load both GeoJSONs (using converted versions with consistent CRS)
+      console.log("Starting data loading...");
       Promise.all([
-        fetch("data/county_data_simp.geojson").then((response) => {
-          if (!response.ok) {
-            throw new Error(
-              `HTTP error fetching geojson! status: ${response.status}`
-            );
-          }
-          return response.json();
+        fetch("data/listings_hex_converted.geojson").then((res) => {
+          console.log("Hex data fetch response:", res.status, res.statusText);
+          if (!res.ok) throw new Error(`Hex data fetch failed: ${res.status}`);
+          return res.json();
         }),
-        fetch("data/listings_county_summary.csv").then((response) => {
-          if (!response.ok) {
-            throw new Error(
-              `HTTP error fetching csv! status: ${response.status}`
-            );
-          }
-          return response.text();
+        fetch("data/county_overlay_converted.geojson").then((res) => {
+          console.log(
+            "County data fetch response:",
+            res.status,
+            res.statusText
+          );
+          if (!res.ok)
+            throw new Error(`County data fetch failed: ${res.status}`);
+          return res.json();
         }),
       ])
-        .then(([geo, csvText]) => {
-          geoData = geo;
-          csvDataMap = parseCsvToMap(csvText);
-          // Register the map once, not on every metric change
-          echarts.registerMap("AtlantaCounties", geoData);
-          setupChart(currentMetric);
-          setupControls();
+        .then(([hex, counties]) => {
+          console.log("Raw data loaded, processing...");
+          hexGeoJSON = hex;
+          countyGeoJSON = counties;
+
+          console.log(
+            "Data processed successfully:",
+            hex.features.length,
+            "hex features,",
+            counties.features.length,
+            "county features"
+          );
+
+          console.log("Registering maps with ECharts...");
+          echarts.registerMap("HexGrid", hexGeoJSON);
+          echarts.registerMap("Counties", countyGeoJSON);
+          console.log("Maps registered successfully");
+
+          console.log("Calling updateChart...");
+          updateChart("total_listings"); // default metric
         })
         .catch((error) => {
-          console.error("Error loading data:", error);
-          myChart.hideLoading();
-          document.getElementById("main").innerHTML =
-            '<div class="loading" style="color: red;">Error loading data: ' +
-            error.message +
-            "</div>";
+          console.error("ERROR loading data:", error);
+          alert("Failed to load map data. Check console for details.");
         });
 
-      // Simplified configuration for only 3 metrics
-      function getMetricConfig(metric) {
-        const configs = {
-          total_listings: {
-            title: "Total Listings",
-            formatter: (value) =>
-              value !== null && value !== undefined
-                ? value.toLocaleString()
-                : "No data",
-            axisFormatter: (value) => value.toLocaleString(),
-            colors: ["#eff3ff", "#bdd7e7", "#6baed6", "#3182bd", "#08519c"],
-          },
-          median_DOM: {
-            title: "Median Days on Market",
-            formatter: (value) =>
-              value !== null && value !== undefined
-                ? value.toLocaleString() + " days"
-                : "No data",
-            axisFormatter: (value) => value.toLocaleString(),
-            colors: ["#ffffcc", "#a1dab4", "#41b6c4", "#2c7fb8", "#253494"],
-          },
-          investor_owned_listing: {
-            title: "Investor-Owned Listings",
-            formatter: (value) =>
-              value !== null && value !== undefined
-                ? value.toLocaleString(0)
-                : "No data",
-            axisFormatter: (value) => value.toLocaleString(0),
-            colors: ["#ffffb2", "#fecc5c", "#fd8d3c", "#f03b20", "#bd0026"],
-          },
-        };
-        return configs[metric];
-      }
+      // Function to update chart by metric
+      function updateChart(metric) {
+        console.log(`updateChart called with metric: ${metric}`);
 
-      // Minimal CSV parser -> Map county name -> row object
-      function parseCsvToMap(csvText) {
-        const lines = csvText.trim().split(/\r?\n/);
-        if (lines.length === 0) return new Map();
-        const headers = lines[0].split(",");
-        const map = new Map();
-        for (let i = 1; i < lines.length; i++) {
-          const line = lines[i];
-          if (!line || !line.trim()) continue;
-          const cols = line.split(",");
-          const row = {};
-          headers.forEach((h, idx) => {
-            const key = h;
-            const raw = cols[idx] !== undefined ? cols[idx].trim() : "";
-            const asNumber = raw === "" ? null : Number(raw);
-            row[key] =
-              raw === "" ? null : Number.isNaN(asNumber) ? raw : asNumber;
-          });
-          const countyName = row["county"] || row["County"] || row["name"];
-          if (countyName) {
-            map.set(countyName, row);
-          }
-        }
-        return map;
-      }
-
-      // Color interpolation function to match visualMap behavior
-      function interpolateColor(color1, color2, weight) {
-        // Convert hex colors to RGB
-        function hexToRgb(hex) {
-          const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-          return result
-            ? {
-                r: parseInt(result[1], 16),
-                g: parseInt(result[2], 16),
-                b: parseInt(result[3], 16),
-              }
-            : null;
-        }
-
-        // Convert RGB to hex
-        function rgbToHex(r, g, b) {
-          return (
-            "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)
-          );
-        }
-
-        const rgb1 = hexToRgb(color1);
-        const rgb2 = hexToRgb(color2);
-
-        if (!rgb1 || !rgb2) return color1;
-
-        const r = Math.round(rgb1.r + (rgb2.r - rgb1.r) * weight);
-        const g = Math.round(rgb1.g + (rgb2.g - rgb1.g) * weight);
-        const b = Math.round(rgb1.b + (rgb2.b - rgb1.b) * weight);
-
-        return rgbToHex(r, g, b);
-      }
-
-      function setupChart(metric) {
-        myChart.hideLoading();
-
-        // Extract data by joining GeoJSON with CSV on county name
-        var countyData = geoData.features
-          .map(function (feature) {
-            const countyName = feature.properties.name;
-            const csvRow = csvDataMap.get(countyName);
-            let value = undefined;
-            if (csvRow && csvRow.hasOwnProperty(metric)) {
-              value = csvRow[metric];
-            } else {
-              value = feature.properties[metric];
-            }
-            if (value === "") value = null;
-            if (typeof value === "string" && value !== null) {
-              const parsed = Number(value);
-              value = Number.isNaN(parsed) ? null : parsed;
-            }
-            return {
-              name: countyName,
-              value: value,
-            };
-          })
-          .filter(function (item) {
-            // Keep values that are defined (allow nulls to show as N/A)
-            return item.value !== undefined;
-          });
-
-        // Map is already registered, no need to re-register
-
-        // Sort data for bar chart (ascending order)
-        var sortedData = [...countyData].sort(function (a, b) {
-          // Handle null/undefined values
-          if (a.value === null || a.value === undefined) return 1;
-          if (b.value === null || b.value === undefined) return -1;
-          return a.value - b.value;
-        });
-
-        // Find min and max values for visual map
-        const validValues = countyData
-          .map((item) => item.value)
-          .filter((v) => v !== null && v !== undefined && !Number.isNaN(v));
-        if (validValues.length === 0) {
-          myChart.hideLoading();
-          document.getElementById("main").innerHTML =
-            '<div class="loading" style="color: red;">No valid values found for metric: ' +
-            metric +
-            "</div>";
+        if (!hexGeoJSON || !countyGeoJSON) {
+          console.error("GeoJSON data not loaded yet");
           return;
         }
-        const minValue = Math.min(...validValues);
-        const maxValue = Math.max(...validValues);
 
-        const config = getMetricConfig(metric);
+        // Build data array from hex GeoJSON
+        const data = hexGeoJSON.features.map((f) => ({
+          name: f.properties.hex_id,
+          value: f.properties[metric] || 0,
+        }));
 
-        // Pre-calculate colors for bar chart to avoid repeated interpolation
-        const barColors = sortedData.map(function (item) {
-          if (item.value === null || item.value === undefined) {
-            return "#ccc";
-          }
-          // Use the same color interpolation as the map's visualMap
-          const range = maxValue - minValue;
-          const ratio = range === 0 ? 0 : (item.value - minValue) / range;
-          const colors = config.colors;
-
-          // Interpolate between colors like visualMap does
-          if (ratio <= 0) return colors[0];
-          if (ratio >= 1) return colors[colors.length - 1];
-
-          const colorIndex = ratio * (colors.length - 1);
-          const lowerIndex = Math.floor(colorIndex);
-          const upperIndex = Math.ceil(colorIndex);
-          const lowerColor = colors[lowerIndex];
-          const upperColor = colors[upperIndex];
-          const weight = colorIndex - lowerIndex;
-
-          // Simple linear interpolation between colors
-          return interpolateColor(lowerColor, upperColor, weight);
-        });
+        // Debug: Check data values
+        const values = data.map((d) => d.value).filter((v) => v > 0);
+        const minVal = Math.min(...values);
+        const maxVal = Math.max(...values);
+        const range = maxVal - minVal;
 
         console.log(
-          "Loaded",
-          countyData.length,
-          "counties for metric:",
-          metric
-        );
-        console.log(
-          "Value range:",
-          config.axisFormatter(minValue),
-          "to",
-          config.axisFormatter(maxValue)
+          `Metric: ${metric}, Data prepared: ${data.length} items, Values range: ${minVal} - ${maxVal}, Range span: ${range}, Non-zero count: ${values.length}`
         );
 
-        const mapOption = {
-          title: {
-            text: config.title,
-            left: "center",
-            top: 10,
-            textStyle: {
-              fontSize: 16,
-              color: "#ffffff",
-            },
+        // Get configuration for this metric
+        const config = metricConfig[metric];
+        if (!config) {
+          console.error(`No configuration found for metric: ${metric}`);
+          return;
+        }
+
+        const visualMapMin = config.bins[0];
+        const visualMapMax = config.bins[config.bins.length - 1];
+        console.log(
+          `Using configured range: ${visualMapMin} - ${visualMapMax} with ${config.colors.length} colors`
+        );
+
+        const option = {
+          geo: {
+            map: "HexGrid",
+            roam: true,
+            zoom: 1,
+            center: [-84.5, 33.8], // Atlanta area center
+            scaleLimit: { min: 0.5, max: 10 },
+            show: false, // Hide geo component - let series handle rendering
           },
           tooltip: {
             trigger: "item",
             formatter: function (params) {
-              const value = params.value;
-              return (
-                "<div style='text-align: center;'>" +
-                params.name +
-                " County" +
-                "<br/>" +
-                config.title +
-                ": " +
-                config.formatter(value) +
-                "</div>"
+              // Only show tooltip for hex data, not county overlay
+              if (params.seriesName === "counties") {
+                return false;
+              }
+
+              // Find the corresponding hexagon feature to get county info
+              const hexFeature = hexGeoJSON.features.find(
+                (f) => f.properties.hex_id === params.name
               );
+              const countyName = hexFeature
+                ? hexFeature.properties.County
+                : "Unknown";
+
+              // Format metric name for display
+              let displayMetric;
+              if (metric === "total_listings") {
+                displayMetric = "Total Listings";
+              } else {
+                displayMetric = metric
+                  .replace("_", " ")
+                  .replace(/\b\w/g, (l) => l.toUpperCase());
+              }
+
+              return `${displayMetric}: ${params.value}<br/>${countyName} County`;
             },
           },
           visualMap: {
-            type: "continuous",
             left: "right",
-            top: "center",
-            min: minValue,
-            max: maxValue,
+            min: visualMapMin,
+            max: visualMapMax,
+            text: config.labels,
+            calculable: true,
             inRange: {
               color: config.colors,
             },
-            text: ["High", "Low"],
-            calculable: true,
             textStyle: {
-              color: "#ffffff",
+              color: "#000",
             },
-            formatter: function (value) {
-              return config.axisFormatter(value);
-            },
+            show: true,
+            precision: metric === "median_vintage" ? 0 : 1, // No decimals for years
           },
           series: [
+            // Choropleth hexagons
             {
-              id: "metric",
+              name: metric,
               type: "map",
-              roam: false,
-              map: "AtlantaCounties",
-              animationDurationUpdate: 1000,
-              universalTransition: true,
-              data: countyData,
+              map: "HexGrid",
+              nameProperty: "hex_id",
+              data: data,
+              itemStyle: {
+                borderColor: "#bdbdbd",
+                borderWidth: 0.75,
+              },
               emphasis: {
+                label: { show: false },
                 itemStyle: {
-                  borderColor: "#000000",
-                  borderWidth: 3,
-                  areaColor: "#404040",
-                },
-                label: {
-                  show: true,
-                  fontSize: 12,
-                  fontWeight: "bold",
+                  borderColor: "#000",
+                  borderWidth: 2,
                 },
               },
-              label: {
-                show: true,
-                fontSize: 10,
-                color: "#404040",
-                backgroundColor: "rgba(255, 255, 255, 0.8)",
-                borderColor: "rgba(255, 255, 255, 0.9)",
-                borderWidth: 1,
-                borderRadius: 3,
-                padding: [2, 4],
-                formatter: function (params) {
-                  return params.name;
+              z: 1, // Layer hexagons below counties
+            },
+            // County overlay
+            {
+              name: "counties",
+              type: "map",
+              map: "Counties",
+              data: [], // No data, just boundaries
+              itemStyle: {
+                areaColor: "transparent",
+                borderColor: "#000000",
+                borderWidth: 2.5,
+                opacity: 0.8,
+              },
+              emphasis: {
+                disabled: true, // Disable hover effects
+                itemStyle: {
+                  areaColor: "transparent",
                 },
               },
+              tooltip: {
+                show: false, // Disable county tooltips
+              },
+              silent: true, // Disable all interactions
+              animation: false,
+              z: 10, // Layer counties above hexagons
             },
           ],
         };
 
-        const barOption = {
-          title: {
-            text: `${config.title} - Metro Atlanta Counties`,
-            left: "center",
-            top: 20,
-            textStyle: {
-              fontSize: 16,
-              color: "#ffffff",
-            },
-          },
-          tooltip: {
-            trigger: "axis",
-            formatter: function (params) {
-              const value = params[0].value;
-              return (
-                "<div style='text-align: center;'>" +
-                params[0].name +
-                " County" +
-                "<br/>" +
-                config.title +
-                ": " +
-                config.formatter(value) +
-                "</div>"
+        console.log("Setting chart option...", option);
+        try {
+          chart.setOption(option, true);
+          console.log("Chart option set successfully");
+
+          // Check if chart is properly sized and add more debugging
+          setTimeout(() => {
+            const container = document.getElementById("chart");
+            console.log(
+              "Final container dimensions:",
+              container.offsetWidth,
+              "x",
+              container.offsetHeight
+            );
+            if (container.offsetWidth === 0 || container.offsetHeight === 0) {
+              console.error(
+                "Chart container has zero dimensions! This will prevent the chart from displaying."
               );
-            },
-          },
-          grid: {
-            left: "20%",
-            right: "10%",
-            top: "15%",
-            bottom: "10%",
-          },
-          xAxis: {
-            type: "value",
-            min: metric === "median_DOM" ? 45 : undefined,
-            axisLabel: {
-              formatter: config.axisFormatter,
-              fontSize: 12,
-              color: "#ffffff",
-            },
-          },
-          yAxis: {
-            type: "category",
-            axisLabel: {
-              rotate: 0,
-              fontSize: 12,
-              color: "#ffffff",
-            },
-            data: sortedData.map(function (item) {
-              return item.name;
-            }),
-          },
-          animationDurationUpdate: 1000,
-          series: {
-            type: "bar",
-            id: "metric",
-            data: sortedData.map(function (item) {
-              return item.value;
-            }),
-            universalTransition: true,
-            itemStyle: {
-              color: function (params) {
-                return barColors[params.dataIndex];
-              },
-            },
-          },
-        };
+            }
 
-        let currentOption = mapOption;
-        myChart.setOption(mapOption);
+            // Debug: Check if we can get chart bounds/viewport info
+            try {
+              const chartModel = chart.getModel();
+              console.log("Chart model available:", !!chartModel);
 
-        // Clear existing interval
-        if (toggleInterval) {
-          clearInterval(toggleInterval);
+              // Get geo component info
+              const geoModel = chart.getModel().getComponent("geo");
+              console.log("Geo model:", geoModel);
+
+              // Try to get coordinate system info
+              const coordSys = chart.getModel().getComponent("geo", 0);
+              console.log("Coordinate system:", coordSys);
+            } catch (e) {
+              console.log("Could not get chart view info:", e.message);
+            }
+          }, 500);
+        } catch (error) {
+          console.error("Error setting chart option:", error);
         }
-
-        // Toggle between map and bar chart every 4 seconds
-        toggleInterval = setInterval(function () {
-          currentOption = currentOption === mapOption ? barOption : mapOption;
-          myChart.setOption(currentOption, true);
-        }, 4000);
-
-        // Handle window resize
-        window.addEventListener("resize", function () {
-          myChart.resize();
-        });
       }
 
-      // Updated to work with Shoelace radio buttons
-      function setupControls() {
-        const metricRadioGroup = document.getElementById("metricRadioGroup");
-
-        // Listen for the sl-change event from Shoelace
-        metricRadioGroup.addEventListener("sl-change", function (event) {
-          currentMetric = event.target.value;
-          setupChart(currentMetric);
-          console.log("Metric changed to:", currentMetric);
+      // Hook up radio button change
+      document
+        .getElementById("metricSelector")
+        .addEventListener("sl-change", (e) => {
+          updateChart(e.target.value);
         });
-      }
     </script>
   </body>
 </html>
