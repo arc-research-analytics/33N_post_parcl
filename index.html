@@ -29,6 +29,19 @@
         display: flex;
         justify-content: center;
       }
+
+      /* Style Shoelace radio buttons with CSS custom properties */
+      sl-radio-button {
+        --sl-color-neutral-700: white;
+        --sl-color-neutral-600: white;
+        --sl-color-neutral-500: white;
+        --sl-color-primary-600: #007bff;
+      }
+
+      /* Override text color for radio button labels */
+      sl-radio-button::part(label) {
+        color: white !important;
+      }
     </style>
   </head>
   <body>
@@ -81,6 +94,7 @@
             "#000000",
           ],
           labels: ["High", "Low"],
+          tooltipLabel: "Total Listings",
         },
         median_DOM: {
           bins: [0, 30, 60, 120, 240, 500, 1000],
@@ -93,6 +107,7 @@
             "#e31a1c",
           ],
           labels: ["Long", "Short"],
+          tooltipLabel: "Median Days on Market",
         },
         median_vintage: {
           bins: [1950, 1970, 1980, 1990, 2000, 2010, 2025],
@@ -105,6 +120,7 @@
             "#FFFFFF",
           ],
           labels: ["Newer", "Older"],
+          tooltipLabel: "Median Construction Year",
         },
         investor_listings: {
           bins: [0, 1, 3, 5, 10, 15, 25],
@@ -117,6 +133,7 @@
             "#67000d",
           ],
           labels: ["High", "Low"],
+          tooltipLabel: "Total Investor Listings",
         },
       };
 
@@ -140,24 +157,10 @@
         }),
       ])
         .then(([hex, counties]) => {
-          console.log("Raw data loaded, processing...");
           hexGeoJSON = hex;
           countyGeoJSON = counties;
-
-          console.log(
-            "Data processed successfully:",
-            hex.features.length,
-            "hex features,",
-            counties.features.length,
-            "county features"
-          );
-
-          console.log("Registering maps with ECharts...");
           echarts.registerMap("HexGrid", hexGeoJSON);
           echarts.registerMap("Counties", countyGeoJSON);
-          console.log("Maps registered successfully");
-
-          console.log("Calling updateChart...");
           updateChart("total_listings"); // default metric
         })
         .catch((error) => {
@@ -230,15 +233,8 @@
                 ? hexFeature.properties.County
                 : "Unknown";
 
-              // Format metric name for display
-              let displayMetric;
-              if (metric === "total_listings") {
-                displayMetric = "Total Listings";
-              } else {
-                displayMetric = metric
-                  .replace("_", " ")
-                  .replace(/\b\w/g, (l) => l.toUpperCase());
-              }
+              // Use the configured tooltip label
+              const displayMetric = config.tooltipLabel;
 
               return `${displayMetric}: ${params.value}<br/>${countyName} County`;
             },
@@ -253,7 +249,7 @@
               color: config.colors,
             },
             textStyle: {
-              color: "#000",
+              color: "#ffffff",
             },
             show: true,
             precision: metric === "median_vintage" ? 0 : 1, // No decimals for years
@@ -272,7 +268,7 @@
               scaleLimit: globalScaleLimit,
               itemStyle: {
                 borderColor: "#bdbdbd",
-                borderWidth: 0.75,
+                borderWidth: 0.5,
               },
               emphasis: {
                 label: { show: false },
@@ -295,9 +291,9 @@
               scaleLimit: globalScaleLimit,
               itemStyle: {
                 areaColor: "transparent",
-                borderColor: "#000000",
-                borderWidth: 2.5,
-                opacity: 0.8,
+                borderColor: "#bdbdbd",
+                borderWidth: 2,
+                opacity: 1,
               },
               emphasis: {
                 disabled: true, // Disable hover effects
