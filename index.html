@@ -55,13 +55,13 @@
       size="small"
     >
       <sl-radio-button value="total_listings">All Listings</sl-radio-button>
-      <sl-radio-button value="median_DOM">Days on Market</sl-radio-button>
-      <sl-radio-button value="median_vintage"
-        >Construction Vintage</sl-radio-button
-      >
       <sl-radio-button value="investor_listings"
         >Investor Listings</sl-radio-button
       >
+      <sl-radio-button value="median_vintage"
+        >Construction Vintage</sl-radio-button
+      >
+      <sl-radio-button value="median_DOM">Days on Market</sl-radio-button>
     </sl-radio-group>
 
     <script>
@@ -84,17 +84,22 @@
       // Configuration object for manual choropleth bins and colors
       const metricConfig = {
         total_listings: {
-          bins: [0, 10, 25, 50, 75, 100, 150],
-          colors: [
-            "#f7f7f7",
-            "#cccccc",
-            "#969696",
-            "#636363",
-            "#252525",
-            "#000000",
-          ],
-          labels: ["High", "Low"],
+          bins: [1, 9, 20, 39, 71, 112],
+          colors: ["#ffffcc", "#a1dab4", "#41b6c4", "#2c7fb8", "#253494"],
+          labels: ["More", "Fewer"],
           tooltipLabel: "Total Listings",
+        },
+        investor_listings: {
+          bins: [0, 2, 4, 7, 9, 19],
+          colors: ["#ffffd4", "#fed98e", "#fe9929", "#d95f0e", "#993404"],
+          labels: ["More", "Fewer"],
+          tooltipLabel: "Total Investor Listings",
+        },
+        median_vintage: {
+          bins: [1920, 1970, 1990, 2000, 2015, 2025],
+          colors: ["#feebe2", "#fbb4b9", "#f768a1", "#c51b8a", "#7a0177"],
+          labels: ["Newer", "Older"],
+          tooltipLabel: "Median Construction Year",
         },
         median_DOM: {
           bins: [0, 30, 60, 120, 240, 500, 1000],
@@ -106,34 +111,8 @@
             "#fd8d3c",
             "#e31a1c",
           ],
-          labels: ["Long", "Short"],
+          labels: ["Longer", "Shorter"],
           tooltipLabel: "Median Days on Market",
-        },
-        median_vintage: {
-          bins: [1950, 1970, 1980, 1990, 2000, 2010, 2025],
-          colors: [
-            "#8B4513",
-            "#CD853F",
-            "#F4A460",
-            "#FFE4B5",
-            "#FFF8DC",
-            "#FFFFFF",
-          ],
-          labels: ["Newer", "Older"],
-          tooltipLabel: "Median Construction Year",
-        },
-        investor_listings: {
-          bins: [0, 1, 3, 5, 10, 15, 25],
-          colors: [
-            "#fee5d9",
-            "#fcae91",
-            "#fb6a4a",
-            "#de2d26",
-            "#a50f15",
-            "#67000d",
-          ],
-          labels: ["High", "Low"],
-          tooltipLabel: "Total Investor Listings",
         },
       };
 
@@ -287,7 +266,6 @@
               data: [], // No data, just boundaries
               zoom: globalZoom,
               center: globalCenter,
-              roam: globalRoam, // Same roam setting, but silent will override interactions
               scaleLimit: globalScaleLimit,
               itemStyle: {
                 areaColor: "transparent",
