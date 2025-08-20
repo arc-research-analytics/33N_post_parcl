@@ -24,19 +24,19 @@
 
       /* Metric heading text box */
       #metricHeading {
-        position: absolute;
-        top: 10px;
-        left: 10px;
         color: white;
-        font-weight: bold;
+        font-weight: 400;
         padding: 8px 12px;
         font-size: 15px;
         line-height: 1.3;
-        z-index: 1000;
-        max-width: 250px;
+        /* max-width: 250px; */
         word-wrap: break-word;
         /* change font to sans-serif */
         font-family: sans-serif;
+        /* Center the text box above radio buttons */
+        text-align: center;
+        margin: 10px auto;
+        width: fit-content;
       }
       /* background color */
       body {
@@ -108,28 +108,29 @@
           colors: ["#ffffcc", "#a1dab4", "#41b6c4", "#2c7fb8", "#253494"],
           labels: ["More", "Fewer"],
           tooltipLabel: "Total Listings",
-          metricHeading: "Total Regional Listings: 21,595",
+          metricHeading: "Total Regional Listings: <b>21,595</b>",
         },
         investor_listings: {
           bins: [0, 2, 4, 7, 9, 19],
           colors: ["#ffffd4", "#fed98e", "#fe9929", "#d95f0e", "#993404"],
           labels: ["More", "Fewer"],
           tooltipLabel: "Total Investor Listings",
-          metricHeading: "Total Regional InstitutionalInvestor Listings: 1,073",
+          metricHeading:
+            "Total Regional Institutional Investor Listings: <b>1,073</b>",
         },
         median_list_SF: {
           bins: [0, 100, 200, 300, 400, 500],
           colors: ["#edf8e9", "#bae4b3", "#74c476", "#31a354", "#006d2c"],
           labels: ["Higher", "Lower"],
           tooltipLabel: "Median List Price / SF",
-          metricHeading: "Regional Median List Price / SF: $189.92",
+          metricHeading: "Regional Median List Price / SF: <b>$189.92</b>",
         },
         median_vintage: {
           bins: [1920, 1970, 1990, 2000, 2015, 2025],
           colors: ["#feebe2", "#fbb4b9", "#f768a1", "#c51b8a", "#7a0177"],
           labels: ["Newer", "Older"],
           tooltipLabel: "Median Construction Year",
-          metricHeading: "Regional Median Construction Year: 1994",
+          metricHeading: "Regional Median Construction Year: <b>1994</b>",
         },
       };
 
@@ -210,14 +211,6 @@
           // Add line breaks for better iframe display
           let headingText = config.metricHeading;
 
-          // Add line breaks for longer text (investor listings)
-          if (metric === "investor_listings") {
-            headingText = headingText.replace(
-              "InstitutionalInvestor",
-              "Institutional<br/>Investor"
-            );
-          }
-
           metricHeadingElement.innerHTML = headingText;
         }
 
@@ -263,7 +256,13 @@
               // Use the configured tooltip label
               const displayMetric = config.tooltipLabel;
 
-              return `${displayMetric}: ${params.value}<br/>${countyName} County`;
+              // Format value based on metric type
+              let formattedValue = params.value;
+              if (metric === "median_list_SF") {
+                formattedValue = `$${Number(params.value).toFixed(2)}`;
+              }
+
+              return `${displayMetric}: ${formattedValue}<br/>${countyName} County`;
             },
           },
           visualMap: {
@@ -279,7 +278,24 @@
               color: "#ffffff",
             },
             show: true,
-            precision: metric === "median_vintage" ? 0 : 1, // No decimals for years
+            formatter: function (value) {
+              if (metric === "median_list_SF") {
+                const roundedValue = Math.round(value);
+                // Show max value as "500+" instead of "500"
+                if (roundedValue === visualMapMax) {
+                  return `$${roundedValue}+`;
+                }
+                return `$${roundedValue}`;
+              } else if (
+                metric === "total_listings" ||
+                metric === "investor_listings"
+              ) {
+                return Math.round(value).toString();
+              } else if (metric === "median_vintage") {
+                return Math.round(value).toString();
+              }
+              return value.toString();
+            },
           },
           series: [
             // Choropleth hexagons
