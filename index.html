@@ -97,7 +97,7 @@
       const chart = echarts.init(chartContainer);
       console.log("ECharts instance created:", chart);
 
-      let hexGeoJSON, countyGeoJSON;
+      let hexGeoJSON, countyGeoJSON, countyLabelsGeoJSON;
 
       // Configuration object for manual choropleth bins and colors
       const metricConfig = {
@@ -106,7 +106,7 @@
           colors: ["#ffffcc", "#a1dab4", "#41b6c4", "#2c7fb8", "#253494"],
           labels: ["More", "Fewer"],
           tooltipLabel: "Total Listings",
-          metricHeading: "Total Regional Listings: <b>21,595</b>",
+          metricHeading: "Total Regional Listings: <b>21,444</b>",
         },
         investor_listings: {
           bins: [0, 2, 4, 7, 9, 19],
@@ -132,7 +132,7 @@
         },
       };
 
-      // Load both GeoJSONs (using converted versions with consistent CRS)
+      // Load all GeoJSONs (using converted versions with consistent CRS)
       console.log("Starting data loading...");
       Promise.all([
         fetch("data/listings_hex_converted.geojson").then((res) => {
@@ -150,10 +150,21 @@
             throw new Error(`County data fetch failed: ${res.status}`);
           return res.json();
         }),
+        fetch("data/county-labels.geojson").then((res) => {
+          console.log(
+            "County labels fetch response:",
+            res.status,
+            res.statusText
+          );
+          if (!res.ok)
+            throw new Error(`County labels fetch failed: ${res.status}`);
+          return res.json();
+        }),
       ])
-        .then(([hex, counties]) => {
+        .then(([hex, counties, countyLabels]) => {
           hexGeoJSON = hex;
           countyGeoJSON = counties;
+          countyLabelsGeoJSON = countyLabels;
           echarts.registerMap("HexGrid", hexGeoJSON);
           echarts.registerMap("Counties", countyGeoJSON);
 
@@ -175,7 +186,7 @@
       function updateChart(metric) {
         console.log(`updateChart called with metric: ${metric}`);
 
-        if (!hexGeoJSON || !countyGeoJSON) {
+        if (!hexGeoJSON || !countyGeoJSON || !countyLabelsGeoJSON) {
           console.error("GeoJSON data not loaded yet");
           return;
         }
@@ -184,6 +195,12 @@
         const data = hexGeoJSON.features.map((f) => ({
           name: f.properties.hex_id,
           value: f.properties[metric] || 0,
+        }));
+
+        // Build county labels data array
+        const countyLabelsData = countyLabelsGeoJSON.features.map((f) => ({
+          name: f.properties.name,
+          value: [f.geometry.coordinates[0], f.geometry.coordinates[1]],
         }));
 
         // Debug: Check data values
@@ -234,6 +251,10 @@
           geo: {
             map: "HexGrid",
             show: false, // Hide geo component - let series handle rendering
+            zoom: globalZoom,
+            center: globalCenter,
+            roam: globalRoam,
+            scaleLimit: globalScaleLimit,
           },
           tooltip: {
             trigger: "item",
@@ -347,6 +368,41 @@
               silent: true, // Disable all interactions
               animation: false,
               z: 10, // Layer counties above hexagons
+            },
+            // County labels
+            {
+              name: "countyLabels",
+              type: "scatter",
+              coordinateSystem: "geo",
+              geoIndex: 0,
+              data: countyLabelsData,
+              symbolSize: 8,
+              itemStyle: {
+                color: "transparent", // Point markers
+              },
+              label: {
+                show: true,
+                formatter: function (params) {
+                  return params.name.toUpperCase();
+                },
+                position: "inside",
+                fontSize: 12,
+                fontWeight: "bold",
+                fontStyle: "italic",
+                color: "#000000",
+                textBorderColor: "#ffffff",
+                textBorderWidth: 3,
+                opacity: 0.85,
+              },
+              emphasis: {
+                disabled: true, // Disable hover effects
+              },
+              tooltip: {
+                show: false, // Disable tooltips for labels
+              },
+              silent: true, // Disable all interactions
+              animation: false,
+              z: 15, // Layer labels above everything
             },
           ],
         };

@@ -1,0 +1,18 @@
+{
+"type": "FeatureCollection",
+"name": "county-labels",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "id": 1, "name": "Cherokee" }, "geometry": { "type": "Point", "coordinates": [ -84.457830753598245, 34.247392333460027 ] } },
+{ "type": "Feature", "properties": { "id": 2, "name": "Forsyth" }, "geometry": { "type": "Point", "coordinates": [ -84.126416906332864, 34.234304447640817 ] } },
+{ "type": "Feature", "properties": { "id": 3, "name": "Gwinnett" }, "geometry": { "type": "Point", "coordinates": [ -84.015652337348243, 33.957903608409119 ] } },
+{ "type": "Feature", "properties": { "id": 4, "name": "Cobb" }, "geometry": { "type": "Point", "coordinates": [ -84.57182022972772, 33.952861125930539 ] } },
+{ "type": "Feature", "properties": { "id": 5, "name": "Douglas" }, "geometry": { "type": "Point", "coordinates": [ -84.770482658767335, 33.700684155322278 ] } },
+{ "type": "Feature", "properties": { "id": 6, "name": "DeKalb" }, "geometry": { "type": "Point", "coordinates": [ -84.250490775645048, 33.801814789480019 ] } },
+{ "type": "Feature", "properties": { "id": 7, "name": "Fulton" }, "geometry": { "type": "Point", "coordinates": [ -84.465571253690101, 33.737033113461536 ] } },
+{ "type": "Feature", "properties": { "id": 8, "name": "Fayette" }, "geometry": { "type": "Point", "coordinates": [ -84.494824165148728, 33.417990243272342 ] } },
+{ "type": "Feature", "properties": { "id": 9, "name": "Clayton" }, "geometry": { "type": "Point", "coordinates": [ -84.361859010383753, 33.574550347219954 ] } },
+{ "type": "Feature", "properties": { "id": 10, "name": "Henry" }, "geometry": { "type": "Point", "coordinates": [ -84.156552332407628, 33.456626906624692 ] } },
+{ "type": "Feature", "properties": { "id": 11, "name": "Rockdale" }, "geometry": { "type": "Point", "coordinates": [ -83.995540100406416, 33.653792765103297 ] } }
+]
+}
