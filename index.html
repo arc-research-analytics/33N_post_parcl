@@ -58,10 +58,10 @@
       <sl-radio-button value="investor_listings"
         >Investor Listings</sl-radio-button
       >
+      <sl-radio-button value="median_list_SF">List Price / SF</sl-radio-button>
       <sl-radio-button value="median_vintage"
         >Construction Vintage</sl-radio-button
       >
-      <sl-radio-button value="median_DOM">Days on Market</sl-radio-button>
     </sl-radio-group>
 
     <script>
@@ -95,24 +95,17 @@
           labels: ["More", "Fewer"],
           tooltipLabel: "Total Investor Listings",
         },
+        median_list_SF: {
+          bins: [0, 100, 200, 300, 400, 500],
+          colors: ["#edf8e9", "#bae4b3", "#74c476", "#31a354", "#006d2c"],
+          labels: ["Higher", "Lower"],
+          tooltipLabel: "Median List Price / SF",
+        },
         median_vintage: {
           bins: [1920, 1970, 1990, 2000, 2015, 2025],
           colors: ["#feebe2", "#fbb4b9", "#f768a1", "#c51b8a", "#7a0177"],
           labels: ["Newer", "Older"],
           tooltipLabel: "Median Construction Year",
-        },
-        median_DOM: {
-          bins: [0, 30, 60, 120, 240, 500, 1000],
-          colors: [
-            "#ffffcc",
-            "#ffeda0",
-            "#fed976",
-            "#feb24c",
-            "#fd8d3c",
-            "#e31a1c",
-          ],
-          labels: ["Longer", "Shorter"],
-          tooltipLabel: "Median Days on Market",
         },
       };
 
@@ -190,6 +183,12 @@
         const globalCenter = [-84.4, 33.83]; // Atlanta area center
         const globalScaleLimit = { min: 0.5, max: 10 };
         const globalRoam = false; // Enable zoom and pan interactions
+
+        // Determine border color based on metric
+        const borderColor =
+          metric === "total_listings" || metric === "investor_listings"
+            ? "#000000"
+            : "#ffffff";
 
         const option = {
           geo: {
@@ -269,7 +268,7 @@
               scaleLimit: globalScaleLimit,
               itemStyle: {
                 areaColor: "transparent",
-                borderColor: "#bdbdbd",
+                borderColor: borderColor,
                 borderWidth: 2,
                 opacity: 1,
               },
