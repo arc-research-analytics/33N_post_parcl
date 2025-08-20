@@ -19,6 +19,24 @@
       #chart {
         width: 100%;
         height: 600px;
+        position: relative;
+      }
+
+      /* Metric heading text box */
+      #metricHeading {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        color: white;
+        font-weight: bold;
+        padding: 8px 12px;
+        font-size: 15px;
+        line-height: 1.3;
+        z-index: 1000;
+        max-width: 250px;
+        word-wrap: break-word;
+        /* change font to sans-serif */
+        font-family: sans-serif;
       }
       /* background color */
       body {
@@ -46,6 +64,8 @@
   </head>
   <body>
     <div id="chart"></div>
+
+    <div id="metricHeading"></div>
 
     <!-- Shoelace UI radio buttons -->
     <sl-radio-group
@@ -88,24 +108,28 @@
           colors: ["#ffffcc", "#a1dab4", "#41b6c4", "#2c7fb8", "#253494"],
           labels: ["More", "Fewer"],
           tooltipLabel: "Total Listings",
+          metricHeading: "Total Regional Listings: 21,595",
         },
         investor_listings: {
           bins: [0, 2, 4, 7, 9, 19],
           colors: ["#ffffd4", "#fed98e", "#fe9929", "#d95f0e", "#993404"],
           labels: ["More", "Fewer"],
           tooltipLabel: "Total Investor Listings",
+          metricHeading: "Total Regional InstitutionalInvestor Listings: 1,073",
         },
         median_list_SF: {
           bins: [0, 100, 200, 300, 400, 500],
           colors: ["#edf8e9", "#bae4b3", "#74c476", "#31a354", "#006d2c"],
           labels: ["Higher", "Lower"],
           tooltipLabel: "Median List Price / SF",
+          metricHeading: "Regional Median List Price / SF: $189.92",
         },
         median_vintage: {
           bins: [1920, 1970, 1990, 2000, 2015, 2025],
           colors: ["#feebe2", "#fbb4b9", "#f768a1", "#c51b8a", "#7a0177"],
           labels: ["Newer", "Older"],
           tooltipLabel: "Median Construction Year",
+          metricHeading: "Regional Median Construction Year: 1994",
         },
       };
 
@@ -133,6 +157,14 @@
           countyGeoJSON = counties;
           echarts.registerMap("HexGrid", hexGeoJSON);
           echarts.registerMap("Counties", countyGeoJSON);
+
+          // Initialize metric heading with default
+          const defaultHeading = metricConfig.total_listings.metricHeading;
+          const metricHeadingElement = document.getElementById("metricHeading");
+          if (metricHeadingElement && defaultHeading) {
+            metricHeadingElement.innerHTML = defaultHeading;
+          }
+
           updateChart("total_listings"); // default metric
         })
         .catch((error) => {
@@ -170,6 +202,23 @@
         if (!config) {
           console.error(`No configuration found for metric: ${metric}`);
           return;
+        }
+
+        // Update metric heading text with line breaks for iframe display
+        const metricHeadingElement = document.getElementById("metricHeading");
+        if (metricHeadingElement && config.metricHeading) {
+          // Add line breaks for better iframe display
+          let headingText = config.metricHeading;
+
+          // Add line breaks for longer text (investor listings)
+          if (metric === "investor_listings") {
+            headingText = headingText.replace(
+              "InstitutionalInvestor",
+              "Institutional<br/>Investor"
+            );
+          }
+
+          metricHeadingElement.innerHTML = headingText;
         }
 
         const visualMapMin = config.bins[0];
