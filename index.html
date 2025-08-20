@@ -278,7 +278,12 @@
               // Format value based on metric type
               let formattedValue = params.value;
               if (metric === "median_list_SF") {
-                formattedValue = `$${Number(params.value).toFixed(2)}`;
+                const numValue = Number(params.value);
+                if (numValue > 500) {
+                  formattedValue = "> $500";
+                } else {
+                  formattedValue = `$${numValue.toFixed(2)}`;
+                }
               }
 
               return `${displayMetric}: ${formattedValue}<br/>${countyName} County`;
@@ -300,9 +305,13 @@
             formatter: function (value) {
               if (metric === "median_list_SF") {
                 const roundedValue = Math.round(value);
-                // Show max value as "500+" instead of "500"
+                // Show top static legend value as "> $500" to indicate range extends higher
                 if (roundedValue === visualMapMax) {
-                  return `$${roundedValue}+`;
+                  return "> $500";
+                }
+                // Show interactive hover values above $500 as "> $500"
+                else if (roundedValue > 500) {
+                  return "> $500";
                 }
                 return `$${roundedValue}`;
               } else if (
