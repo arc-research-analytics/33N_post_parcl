@@ -226,7 +226,7 @@
               // Scale bar background (white outline)
               {
                 type: "rect",
-                left: 25,
+                left: 65,
                 bottom: 5,
                 shape: { width: pixelDist + 4, height: 12 },
                 style: {
@@ -239,7 +239,7 @@
               // First half of scale bar (0-5 miles) - white
               {
                 type: "rect",
-                left: 27,
+                left: 67,
                 bottom: 7,
                 shape: { width: halfwayPixelDist, height: 8 },
                 style: { fill: "white", stroke: "#333", lineWidth: 1 },
@@ -248,7 +248,7 @@
               // Second half of scale bar (5-10 miles) - black
               {
                 type: "rect",
-                left: 27 + halfwayPixelDist,
+                left: 67 + halfwayPixelDist,
                 bottom: 7,
                 shape: { width: halfwayPixelDist, height: 8 },
                 style: { fill: "#333" },
@@ -257,7 +257,7 @@
               // 0 mile label
               {
                 type: "text",
-                left: 27,
+                left: 67,
                 bottom: 25,
                 style: {
                   text: "0",
@@ -272,7 +272,7 @@
               // 5 mile label
               {
                 type: "text",
-                left: 27 + halfwayPixelDist,
+                left: 67 + halfwayPixelDist,
                 bottom: 25,
                 style: {
                   text: "5",
@@ -287,7 +287,7 @@
               // 10 mile label
               {
                 type: "text",
-                left: 27 + pixelDist,
+                left: 67 + pixelDist,
                 bottom: 25,
                 style: {
                   text: "10 mi",
