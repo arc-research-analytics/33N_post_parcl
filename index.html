@@ -226,8 +226,8 @@
               // Scale bar background (white outline)
               {
                 type: "rect",
-                left: 45,
-                bottom: 25,
+                left: 25,
+                bottom: 15,
                 shape: { width: pixelDist + 4, height: 12 },
                 style: {
                   fill: "white",
@@ -239,8 +239,8 @@
               // First half of scale bar (0-5 miles) - white
               {
                 type: "rect",
-                left: 47,
-                bottom: 27,
+                left: 27,
+                bottom: 17,
                 shape: { width: halfwayPixelDist, height: 8 },
                 style: { fill: "white", stroke: "#333", lineWidth: 1 },
                 z: 1001,
@@ -248,8 +248,8 @@
               // Second half of scale bar (5-10 miles) - black
               {
                 type: "rect",
-                left: 47 + halfwayPixelDist,
-                bottom: 27,
+                left: 27 + halfwayPixelDist,
+                bottom: 17,
                 shape: { width: halfwayPixelDist, height: 8 },
                 style: { fill: "#333" },
                 z: 1002,
@@ -257,8 +257,8 @@
               // 0 mile label
               {
                 type: "text",
-                left: 47,
-                bottom: 45,
+                left: 27,
+                bottom: 35,
                 style: {
                   text: "0",
                   fill: "white",
@@ -272,8 +272,8 @@
               // 5 mile label
               {
                 type: "text",
-                left: 47 + halfwayPixelDist,
-                bottom: 45,
+                left: 27 + halfwayPixelDist,
+                bottom: 35,
                 style: {
                   text: "5",
                   fill: "white",
@@ -287,8 +287,8 @@
               // 10 mile label
               {
                 type: "text",
-                left: 47 + pixelDist,
-                bottom: 45,
+                left: 27 + pixelDist,
+                bottom: 35,
                 style: {
                   text: "10 mi",
                   fill: "white",
