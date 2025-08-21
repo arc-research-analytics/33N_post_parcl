@@ -182,6 +182,134 @@
           alert("Failed to load map data. Check console for details.");
         });
 
+      // Scale bar variables (calculated once)
+      let scaleBarGraphics = null;
+      let scaleBarCalculated = false;
+
+      // Function to add scale bar to the map (calculate once, reuse)
+      function addScaleBar() {
+        if (scaleBarCalculated && scaleBarGraphics) {
+          // Reuse existing scale bar graphics
+          chart.setOption({ graphic: scaleBarGraphics }, false);
+          return;
+        }
+
+        // Calculate scale bar only once
+        setTimeout(() => {
+          try {
+            // Calculate scale bar for Atlanta area (lat: 33.83)
+            const centerLat = 33.83;
+            const centerLon = -84.4;
+            const milesDistance = 10;
+            const lonOffset = 0.174; // 10 miles at this latitude
+
+            const [x1, y1] = chart.convertToPixel({ geoIndex: 0 }, [
+              centerLon,
+              centerLat,
+            ]);
+            const [x2, y2] = chart.convertToPixel({ geoIndex: 0 }, [
+              centerLon + lonOffset,
+              centerLat,
+            ]);
+
+            const pixelDist = Math.abs(x2 - x1);
+            const halfwayPixelDist = pixelDist / 2;
+
+            console.log(
+              `Scale bar calculated once: ${milesDistance} miles = ${pixelDist.toFixed(
+                1
+              )} pixels`
+            );
+
+            // Store scale bar graphics for reuse
+            scaleBarGraphics = [
+              // Scale bar background (white outline)
+              {
+                type: "rect",
+                left: 45,
+                bottom: 45,
+                shape: { width: pixelDist + 4, height: 12 },
+                style: {
+                  fill: "white",
+                  stroke: "#333",
+                  lineWidth: 1,
+                },
+                z: 1000,
+              },
+              // First half of scale bar (0-5 miles) - white
+              {
+                type: "rect",
+                left: 47,
+                bottom: 47,
+                shape: { width: halfwayPixelDist, height: 8 },
+                style: { fill: "white", stroke: "#333", lineWidth: 1 },
+                z: 1001,
+              },
+              // Second half of scale bar (5-10 miles) - black
+              {
+                type: "rect",
+                left: 47 + halfwayPixelDist,
+                bottom: 47,
+                shape: { width: halfwayPixelDist, height: 8 },
+                style: { fill: "#333" },
+                z: 1002,
+              },
+              // 0 mile label
+              {
+                type: "text",
+                left: 47,
+                bottom: 65,
+                style: {
+                  text: "0",
+                  fill: "white",
+                  font: "bold 12px sans-serif",
+                  textAlign: "center",
+                  stroke: "#333",
+                  lineWidth: 1,
+                },
+                z: 1003,
+              },
+              // 5 mile label
+              {
+                type: "text",
+                left: 47 + halfwayPixelDist,
+                bottom: 65,
+                style: {
+                  text: "5",
+                  fill: "white",
+                  font: "bold 12px sans-serif",
+                  textAlign: "center",
+                  stroke: "#333",
+                  lineWidth: 1,
+                },
+                z: 1003,
+              },
+              // 10 mile label
+              {
+                type: "text",
+                left: 47 + pixelDist,
+                bottom: 65,
+                style: {
+                  text: "10 mi",
+                  fill: "white",
+                  font: "bold 12px sans-serif",
+                  textAlign: "center",
+                  stroke: "#333",
+                  lineWidth: 1,
+                },
+                z: 1003,
+              },
+            ];
+
+            // Add scale bar to chart
+            chart.setOption({ graphic: scaleBarGraphics }, false);
+            scaleBarCalculated = true;
+          } catch (error) {
+            console.error("Error creating scale bar:", error);
+          }
+        }, 100); // Small delay to ensure map is rendered
+      }
+
       // Function to update chart by metric
       function updateChart(metric) {
         console.log(`updateChart called with metric: ${metric}`);
@@ -420,6 +548,9 @@
         try {
           chart.setOption(option, true);
           console.log("Chart option set successfully");
+
+          // Add scale bar after chart renders
+          addScaleBar();
 
           // Check if chart is properly sized and add more debugging
           setTimeout(() => {
