@@ -25,7 +25,7 @@
 
       /* Metric heading text box */
       #metricHeading {
-        color: white;
+        color: #000000;
         font-weight: 400;
         padding: 0px;
         font-size: 15px;
@@ -38,7 +38,7 @@
       }
       /* background color */
       body {
-        background-color: #777777;
+        background-color: #f9f9f9;
       }
       /* center align the radio buttons */
       #metricSelector {
@@ -56,7 +56,7 @@
 
       /* Override text color for radio button labels */
       sl-radio-button::part(label) {
-        color: white !important;
+        color: #000000 !important;
       }
     </style>
   </head>
@@ -231,7 +231,7 @@
                 shape: { width: pixelDist + 4, height: 12 },
                 style: {
                   fill: "white",
-                  stroke: "#333",
+                  stroke: "#000000",
                   lineWidth: 1,
                 },
                 z: 1000,
@@ -261,10 +261,10 @@
                 bottom: 25,
                 style: {
                   text: "0",
-                  fill: "white",
+                  fill: "black",
                   font: "bold 12px sans-serif",
                   textAlign: "center",
-                  stroke: "#333",
+                  stroke: "#000000",
                   lineWidth: 1,
                 },
                 z: 1003,
@@ -276,10 +276,10 @@
                 bottom: 25,
                 style: {
                   text: "5",
-                  fill: "white",
+                  fill: "black",
                   font: "bold 12px sans-serif",
                   textAlign: "center",
-                  stroke: "#333",
+                  stroke: "#000000",
                   lineWidth: 1,
                 },
                 z: 1003,
@@ -291,10 +291,10 @@
                 bottom: 25,
                 style: {
                   text: "10 mi",
-                  fill: "white",
+                  fill: "black",
                   font: "bold 12px sans-serif",
                   textAlign: "center",
-                  stroke: "#333",
+                  stroke: "#000000",
                   lineWidth: 1,
                 },
                 z: 1003,
@@ -373,7 +373,7 @@
         const borderColor =
           metric === "total_listings" || metric === "investor_listings"
             ? "#000000"
-            : "#ffffff";
+            : "#000000";
 
         const option = {
           geo: {
@@ -427,7 +427,7 @@
               color: config.colors,
             },
             textStyle: {
-              color: "#ffffff",
+              color: "#000000",
             },
             show: true,
             formatter: function (value) {
